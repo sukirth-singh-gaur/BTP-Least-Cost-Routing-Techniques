@@ -1,4 +1,3 @@
-#include <iostream>
 #include <string>
 #include <fstream>
 #include <stdio.h>
@@ -27,7 +26,7 @@ time_t RandGlob=time(NULL);//used to generate random number
 float randomgeneration(long);//used to generate random numbers (program is obtained from book numerical recipes )
 
 float r;//used to store random number
-float r2;
+float r2,r3;
 static long seed=time(NULL);// different seeds are used for generating random number
 
 // Function to compute the cost for one destination node with two intermediate nodes
@@ -115,6 +114,139 @@ float set_1_2_3(vector<vector<float>> &m){
     return x;
 }
 
+void send_Packet_When_Reached_2_Nodes(vector<vector<float>> &m,int intermediateNodeOne,int intermediateNodeTwo,int &packetCountTotal,int &packetCount4,int &packetCount5,int &i){
+    /*
+    We now have 4 possible paths
+    if intermediate1 or intermediate2 == 2
+        then from 2 to 4 and 5 
+        or   from 1 to 4 and 2 to 5
+        or   from 3 to 5 and 2 to 5
+    else from 1 to 4 and 3 to 5
+    */
+
+    float option1 = FLT_MAX;
+    float option2 = FLT_MAX;
+    float option3 = FLT_MAX;
+
+    if(intermediateNodeOne == 2 ){
+        vector<float> cost2_45 = {{m[2][4], m[2][5]}};
+        option1 = dest2(cost2_45);
+        if(intermediateNodeTwo == 1){
+            option2 = m[1][4] + m[2][5];
+        }
+        else if(intermediateNodeTwo == 3){
+            option2 = m[3][5] + m[2][4];
+        }
+    } else {
+        option3 = m[1][4] + m[3][5];
+    }
+    float mini = min(option3,min(option1,option2));
+    // cout<<"Options: "<<endl;
+    // cout<< option1<<" "<< option2<< " "<< option3 <<endl;
+    if(mini == option1){
+        float chkptLayer2_1 = (1 - 1 / m[2][4]) * (1 - 1 / m[2][5]);
+        float chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[2][4]) * (1 / m[2][5]);
+        float chkptLayer2_3 = chkptLayer2_2 + (1 / m[2][4]) * (1 - 1 / m[2][5]);
+        float chkptLayer2_4 = chkptLayer2_3 + (1 / m[2][4]) * (1 / m[2][5]);
+        while(packetCount4 != i || packetCount5 != i){ 
+            r2=randomgeneration(seed); // Generates random number by calling function
+            seed=seed+time(NULL);//different seed is used to generate random numbers
+            packetCountTotal ++;
+            //cout<<"random number 2 "<<r2<<endl;
+            if(r2 > chkptLayer2_1 && r2 <=chkptLayer2_2){
+                if(packetCount5 < i) packetCount5++;
+            }   
+            else if(r2 > chkptLayer2_2 && r2 <=chkptLayer2_3){
+                if(packetCount4 < i) packetCount4++;
+            }
+            else if(r2 > chkptLayer2_3 && r2 <=chkptLayer2_4){
+                if(packetCount4 < i) packetCount4++;
+                if(packetCount5 < i) packetCount5++;
+            }
+            //cout<<"pktcount4: "<<packetCount4<<"pktcount5: "<<packetCount5<<endl;
+            //cout<<"total packets: "<<packetCountTotal<<endl;
+        }
+        i++;
+    }
+    else if(mini == option2){
+        if (intermediateNodeTwo == 1){
+
+            float chkptLayer2_1_Intermediate_One = (1 - 1 / m[1][4]);
+            float chkptLayer2_2_Intermediate_One = chkptLayer2_1_Intermediate_One + (1 / m[1][4]);
+            float chkptLayer2_1_Intermediate_Two = (1 - 1 / m[2][5]);
+            float chkptLayer2_2_Intermediate_Two = chkptLayer2_1_Intermediate_Two + (1 / m[2][5]);
+
+            while(packetCount4 != i || packetCount5 != i){ 
+
+                r2=randomgeneration(seed); // Generates random number by calling function
+                seed=seed+time(NULL);//different seed is used to generate random numbers
+                packetCountTotal ++;
+                r3=randomgeneration(seed); // Generates random number by calling function
+                seed=seed+time(NULL);//different seed is used to generate random numbers
+                packetCountTotal ++;
+
+                if(r2 > chkptLayer2_1_Intermediate_One && r2 <= chkptLayer2_2_Intermediate_One){
+                    if(packetCount4 < i) packetCount4++;
+                } 
+                if(r3 > chkptLayer2_1_Intermediate_Two && r3 <= chkptLayer2_2_Intermediate_Two){
+                    if(packetCount5 < i) packetCount5++;
+                } 
+            }
+            i++;
+        }
+        else if(intermediateNodeTwo == 2){
+            float chkptLayer2_1_Intermediate_One = (1 - 1 / m[1][4]);
+            float chkptLayer2_2_Intermediate_One = chkptLayer2_1_Intermediate_One + (1 / m[1][4]);
+
+            float chkptLayer2_1_Intermediate_Two = (1 - 1 / m[3][5]);
+            float chkptLayer2_2_Intermediate_Two = chkptLayer2_1_Intermediate_Two + (1 / m[3][5]);
+
+            while(packetCount4 != i){ 
+                r2=randomgeneration(seed); // Generates random number by calling function
+                seed=seed+time(NULL);//different seed is used to generate random numbers
+                packetCountTotal ++;
+                if(r2 > chkptLayer2_1_Intermediate_One && r2 <= chkptLayer2_2_Intermediate_One){
+                    if(packetCount4 < i) packetCount4++;
+                } 
+            }
+            while(packetCount5 != i){
+                r3=randomgeneration(seed); // Generates random number by calling function
+                seed=seed+time(NULL);//different seed is used to generate random numbers
+                packetCountTotal ++;
+                if(r3 > chkptLayer2_1_Intermediate_Two && r3 <= chkptLayer2_2_Intermediate_Two){
+                    if(packetCount5 < i) packetCount5++;
+                }  
+            }
+            i++;
+        }
+    }
+    else if(mini == option3){
+        float chkptLayer2_1_Intermediate_One = (1 - 1 / m[1][4]);
+        float chkptLayer2_2_Intermediate_One = chkptLayer2_1_Intermediate_One + (1 / m[1][4]);
+
+        float chkptLayer2_1_Intermediate_Two = (1 - 1 / m[3][5]);
+        float chkptLayer2_2_Intermediate_Two = chkptLayer2_1_Intermediate_Two + (1 / m[3][5]);
+
+        while(packetCount4 != i){ 
+            r2=randomgeneration(seed); // Generates random number by calling function
+            seed=seed+time(NULL);//different seed is used to generate random numbers
+            packetCountTotal ++;
+            if(r2 > chkptLayer2_1_Intermediate_One && r2 <= chkptLayer2_2_Intermediate_One){
+                if(packetCount4 < i) packetCount4++;
+            } 
+        }
+        while(packetCount5 != i){
+            r3=randomgeneration(seed); // Generates random number by calling function
+            seed=seed+time(NULL);//different seed is used to generate random numbers
+            packetCountTotal ++;
+            if(r3 > chkptLayer2_1_Intermediate_Two && r3 <= chkptLayer2_2_Intermediate_Two){
+                if(packetCount5 < i) packetCount5++;
+            }  
+        }
+        i++;
+    } 
+}
+
 void sendPackets_1Node(vector<vector<float>> &m){ // Find the min path from the o/p generated to begin sending packets of data
     /*
     In this function there are two hops
@@ -174,7 +306,7 @@ void sendPackets_1Node(vector<vector<float>> &m){ // Find the min path from the 
     cout <<"Total Transmissions Made: " <<packetCountTotal<< endl;
 }
 
-void sendPackets_2Node(vector<vector<float>> &m,int intermediate1,int intermediate2){
+void sendPackets_2Node(vector<vector<float>> &m,int intermediateNodeOne,int intermediateNodeTwo){
     int trans = 0;
     cout<<"Enter the number of packets to be transmitted: ";
     cin>> trans;
@@ -184,15 +316,15 @@ void sendPackets_2Node(vector<vector<float>> &m,int intermediate1,int intermedia
     float chkptLayer1_3 = 0.0;
     float chkptLayer1_4 = 0.0;
 
-    chkptLayer1_1 = (1 - 1 / m[0][intermediate1]) * (1 - 1 / m[0][intermediate2]);
-    chkptLayer1_2 = chkptLayer1_1 + (1 / m[0][intermediate1]) * (1 - 1 / m[0][intermediate2]);
-    chkptLayer1_3 = chkptLayer1_2 + (1 - 1 / m[0][intermediate1]) * (1 / m[0][intermediate2]);
-    chkptLayer1_4 = chkptLayer1_3 + (1 / m[0][intermediate1]) * (1 / m[0][intermediate2]);
+    chkptLayer1_1 = (1 - 1 / m[0][intermediateNodeOne]) * (1 - 1 / m[0][intermediateNodeTwo]);
+    chkptLayer1_2 = chkptLayer1_1 + (1 / m[0][intermediateNodeOne]) * (1 - 1 / m[0][intermediateNodeTwo]);
+    chkptLayer1_3 = chkptLayer1_2 + (1 - 1 / m[0][intermediateNodeOne]) * (1 / m[0][intermediateNodeTwo]);
+    chkptLayer1_4 = chkptLayer1_3 + (1 / m[0][intermediateNodeOne]) * (1 / m[0][intermediateNodeTwo]);
     
-    cout<<chkptLayer1_1<<endl;
-    cout<<chkptLayer1_2<<endl;
-    cout<<chkptLayer1_3<<endl;
-    cout<<chkptLayer1_4<<endl;
+    // cout<<chkptLayer1_1<<endl;
+    // cout<<chkptLayer1_2<<endl;
+    // cout<<chkptLayer1_3<<endl;
+    // cout<<chkptLayer1_4<<endl;
 
     int packetCount4 = 0;
     int packetCount5 = 0;
@@ -201,25 +333,30 @@ void sendPackets_2Node(vector<vector<float>> &m,int intermediate1,int intermedia
         r=randomgeneration(seed); // Generates random number by calling function
         seed=seed+time(NULL);//different seed is used to generate random numbers
         packetCountTotal ++;
-        cout<<"random number 1 "<<r<<endl;
+        //cout<<"random number 1 "<<r<<endl;
+
+        bool packetReachIntermediateOne = false;
+        bool packetReachIntermediateTwo = false;
+
         if(r > chkptLayer1_1 && r <=chkptLayer1_2){ // packet reached the node intermediate1
-            if(intermediate1 == 2){
+            packetReachIntermediateOne = true;
+            if(intermediateNodeOne == 2 && !packetReachIntermediateTwo){
                 float chkptLayer2_1 = (1 - 1 / m[2][4]) * (1 - 1 / m[2][5]);
                 float chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[2][4]) * (1 / m[2][5]);
                 float chkptLayer2_3 = chkptLayer2_2 + (1 / m[2][4]) * (1 - 1 / m[2][5]);
                 float chkptLayer2_4 = chkptLayer2_3 + (1 / m[2][4]) * (1 / m[2][5]);
                 //packetCountTotal ++;
-                cout<<"total packets: "<<packetCountTotal<<endl;
-                cout<<chkptLayer2_1<<endl;
-                cout<<chkptLayer2_2<<endl;
-                cout<<chkptLayer2_3<<endl;
-                cout<<chkptLayer2_4<<endl;
+                // cout<<"total packets: "<<packetCountTotal<<endl;
+                // cout<<chkptLayer2_1<<endl;
+                // cout<<chkptLayer2_2<<endl;
+                // cout<<chkptLayer2_3<<endl;
+                // cout<<chkptLayer2_4<<endl;
 
                 while(packetCount4 != i || packetCount5 != i){ 
                     r2=randomgeneration(seed); // Generates random number by calling function
                     seed=seed+time(NULL);//different seed is used to generate random numbers
                     packetCountTotal ++;
-                    cout<<"random number 2 "<<r2<<endl;
+                    // cout<<"random number 2 "<<r2<<endl;
                     if(r2 > chkptLayer2_1 && r2 <=chkptLayer2_2){
                         if(packetCount5 < i) packetCount5++;
                     }   
@@ -230,134 +367,24 @@ void sendPackets_2Node(vector<vector<float>> &m,int intermediate1,int intermedia
                         if(packetCount4 < i) packetCount4++;
                         if(packetCount5 < i) packetCount5++;
                     }
-                    cout<<"pktcount4: "<<packetCount4<<"pktcount5: "<<packetCount5<<endl;
-                    cout<<"total packets: "<<packetCountTotal<<endl;
+                    // cout<<"pktcount4: "<<packetCount4<<"pktcount5: "<<packetCount5<<endl;
+                    // cout<<"total packets: "<<packetCountTotal<<endl;
                 }
                 i++;
+            }
+            else if(packetReachIntermediateOne && packetReachIntermediateTwo){
+                send_Packet_When_Reached_2_Nodes(m,intermediateNodeOne,intermediateNodeTwo,packetCountTotal,packetCount4,packetCount5,i);
+                packetReachIntermediateOne = false;
+                packetReachIntermediateTwo = false;
             }
         }
-        else if(r > chkptLayer1_2 && r <=chkptLayer1_3){ // packet reached the node intermediate2
-            if(intermediate2 == 2){
-                float chkptLayer2_1 = (1 - 1 / m[2][4]) * (1 - 1 / m[2][5]);
-                float chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[2][4]) * (1 / m[2][5]);
-                float chkptLayer2_3 = chkptLayer2_2 + (1 / m[2][4]) * (1 - 1 / m[2][5]);
-                float chkptLayer2_4 = chkptLayer2_3 + (1 / m[2][4]) * (1 / m[2][5]);
-                while(packetCount4 != i || packetCount5 != i){
-                    packetCountTotal ++;
-                    r2=randomgeneration(seed); // Generates random number by calling function
-                    seed=seed+time(NULL);//different seed is used to generate random numbers
-                    
-                    if(r2 > chkptLayer2_1 && r2 <=chkptLayer2_2){
-                        if(packetCount5 < i) packetCount5++;
-                    }   
-                    else if(r2 > chkptLayer2_2 && r2 <=chkptLayer2_3){
-                        if(packetCount4 < i) packetCount4++;
-                    }
-                    else if(r2 > chkptLayer2_3 && r2 <=chkptLayer2_4){
-                        if(packetCount4 < i) packetCount4++;
-                        if(packetCount5 < i) packetCount5++;
-                    }
-                    cout<<"pktcount4: "<<packetCount4<<"pktcount5: "<<packetCount5<<endl;
-                    packetCountTotal ++;
-                    cout<<"total packets: "<<packetCountTotal<<endl;
-                }
-                i++;
-            }
+        else if(r > chkptLayer1_2 && r <=chkptLayer1_3){ // packet reached the node intermediateNodeTwo
+            packetReachIntermediateTwo = true;
         }
         else if(r > chkptLayer1_3 && r <=chkptLayer1_4){ // packet reached both nodes intermediate1 and intermediate2
-            
-            /*
-            We now have 4 possible paths
-            if intermediate1 or intermediate2 == 2
-                then from 2 to 4 and 5 
-                or   from 1 to 4 and 2 to 5
-                or   from 3 to 5 and 2 to 5
-            else from 1 to 4 and 3 to 5
-            */
-            
-            float option1 = FLT_MAX;
-            float option2 = FLT_MAX;
-            float option3 = FLT_MAX;
-
-            if(intermediate1 == 2 || intermediate2 == 2){
-                if(intermediate2 == 2){
-                    float temp = intermediate1;
-                    intermediate1 = 2;
-                    intermediate2 = temp;
-                }
-
-                vector<float> cost2_45 = {{m[2][4], m[2][5]}};
-                option1 = dest2(cost2_45);
-                if(intermediate2 == 1){
-                    option2 = m[1][4] + m[2][5];
-                }
-                else if(intermediate2 == 3){
-                    option2 = m[3][5] + m[2][4];
-                }
-            } else {
-                option3 = m[1][4] + m[3][5];
-            }
-
-            float mini = min(option3,min(option1,option2));
-            cout<<"Options: "<<endl;
-            cout<< option1<<" "<< option2<< " "<< option3 <<endl;
-            // checkpoints on the number line for the second layer
-            float chkptLayer2_1 = 0.0;
-            float chkptLayer2_2 = 0.0;
-            float chkptLayer2_3 = 0.0;
-            float chkptLayer2_4 = 0.0;
-
-            if(mini == option1){ 
-                chkptLayer2_1 = (1 - 1 / m[2][4]) * (1 - 1 / m[2][5]);
-                chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[2][4]) * (1 / m[2][5]);
-                chkptLayer2_3 = chkptLayer2_2 + (1 / m[2][4]) * (1 - 1 / m[2][5]);
-                chkptLayer2_4 = chkptLayer2_3 + (1 / m[2][4]) * (1 / m[2][5]);
-            }
-            else if(mini == option2){
-                if(intermediate2 == 1){
-                    chkptLayer2_1 = (1 - 1 / m[1][4]) * (1 - 1 / m[2][5]);
-                    chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[1][4]) * (1 / m[2][5]);
-                    chkptLayer2_3 = chkptLayer2_2 + (1 / m[1][4]) * (1 - 1 / m[2][5]);
-                    chkptLayer2_4 = chkptLayer2_3 + (1 / m[1][4]) * (1 / m[2][5]);
-                }else if (intermediate2 == 3){
-                    chkptLayer2_1 = (1 - 1 / m[2][4]) * (1 - 1 / m[3][5]);
-                    chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[2][4]) * (1 / m[3][5]);
-                    chkptLayer2_3 = chkptLayer2_2 + (1 / m[2][4]) * (1 - 1 / m[3][5]);
-                    chkptLayer2_4 = chkptLayer2_3 + (1 / m[2][4]) * (1 / m[3][5]);
-                }
-            }
-            else if(mini == option3){
-                chkptLayer2_1 = (1 - 1 / m[1][4]) * (1 - 1 / m[3][5]);
-                chkptLayer2_2 = chkptLayer2_1 + (1 - 1 / m[1][4]) * (1 / m[3][5]);
-                chkptLayer2_3 = chkptLayer2_2 + (1 / m[1][4]) * (1 - 1 / m[3][5]);
-                chkptLayer2_4 = chkptLayer2_3 + (1 / m[1][4]) * (1 / m[3][5]);
-            }
-            cout<<chkptLayer2_1<<endl;
-            cout<<chkptLayer2_2<<endl;
-            cout<<chkptLayer2_3<<endl;
-            cout<<chkptLayer2_4<<endl;       
-            cout<<"total packets: "<<packetCountTotal<<endl;
-
-            while(packetCount4 != i || packetCount5 != i){
-                r2=randomgeneration(seed); // Generates random number by calling function
-                seed=seed+time(NULL);//different seed is used to generate random numbers
-                packetCountTotal ++;
-                cout<<"random number 2 "<<r2<<endl;
-                if(r2 > chkptLayer2_1 && r2 <=chkptLayer2_2){
-                    if(packetCount5 < i) packetCount5++;
-                }   
-                else if(r2 > chkptLayer2_2 && r2 <=chkptLayer2_3){
-                    if(packetCount4 < i) packetCount4++;
-                }
-                else if(r2 > chkptLayer2_3 && r2 <=chkptLayer2_4){
-                    if(packetCount4 < i) packetCount4++;
-                    if(packetCount5 < i) packetCount5++;
-                }
-                cout<<"pktcount4: "<<packetCount4<<"pktcount5: "<<packetCount5<<endl;
-                packetCountTotal ++;
-                cout<<"total packets: "<<packetCountTotal<<endl;
-            }
-            i++;
+            send_Packet_When_Reached_2_Nodes(m,intermediateNodeOne,intermediateNodeTwo,packetCountTotal,packetCount4,packetCount5,i);
+            packetReachIntermediateOne = false;
+            packetReachIntermediateTwo = false;
         }
     }
     cout<< "Total Transmissions Made: " << packetCountTotal << endl;
@@ -487,10 +514,11 @@ int main() {
     }
     outputFile.close();
     cout << "Results written to output.txt " << endl;
-
-    // sendPackets_2Node(mtx,1,3);
-    // sendPackets_2Node(mtx,2,3);
-    // sendPackets_2Node(mtx,1,3);
+    cout << "Calling Functions Manually : "<< endl;
+    
+    sendPackets_2Node(mtx,2,1);
+    sendPackets_2Node(mtx,2,3);
+    sendPackets_2Node(mtx,1,3);
     
     return 0;
 }
